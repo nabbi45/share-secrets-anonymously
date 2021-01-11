@@ -45,7 +45,8 @@ mongoose.set("useCreateIndex",true);
 const userSchema = new mongoose.Schema ({
   email : String,
   password : String,
-  googleId : String
+  googleId : String,
+  secret : String
 });
 
 userSchema.plugin(passportLocalMongoose);
@@ -110,13 +111,46 @@ app.get("/register",function(req,res){
 })
 
 app.get("/secrets",function(req,res){
+//anyone can access secrets page and rendering all the secrets-
 
+User.find({"secret": {$ne:null}}, function(err, i){ //rendering users which have secret as ne ie not equal to
+  if(err){
+    console.log(err);
+  }else{
+    if(i){
+      res.render("secrets", {usersWithSecrets:i})
+    }
+  }
+});
+
+});
+
+
+app.get("/submit", function(req,res){
   if(req.isAuthenticated()){
-      res.render("secrets");
+      res.render("submit");
   }
   else{
     res.redirect("/login");
   }
+
+});
+
+app.post("/submit", function(req,res){
+  const submittedSecret = req.body.secret;
+  //now assigning that post to the current user-
+  User.findById(req.user.id, function(err,i){
+    if(err){
+      console.log(err);
+    }else{
+      if(i){
+        i.secret = submittedSecret;
+        i.save(function(){
+          res.redirect("/secrets");
+        });
+      }
+    }
+  });
 
 });
 
